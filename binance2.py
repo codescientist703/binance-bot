@@ -23,32 +23,35 @@ from trading_bot.utils import (
     show_eval_result,
     switch_k_backend_device
 )
+from binance.client import Client
 
 tz = pytz.timezone('Asia/Kolkata')
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
 
 
-def Real(url):
-    uh = urllib.request.urlopen(url, context=ctx)
-    data = uh.read().decode()
-    info = json.loads(data)
-    live = info['price'];
+api_key = "JB80jU6aTMYXcLapXKPc2Rmnn12CUcm3l7RlnYAT7w8esCFAKYOTmd4bAMWxB33U"
+api_secret = "FsbKTSb7lCGLpQWoBad9Jobe8xpi177c2KrQ6Q31e86dUA5WgUqaliqHsILk7n5s"
+client = Client(api_key, api_secret)
+client.get_deposit_address(asset='USDT')
+
+cur_symbol = 'XMRUSDT'
+
+
+def Real():
+    live = float(client.get_symbol_ticker(symbol = cur_symbol)['price']);
     time.sleep(1)
-    return float(live) 
+    return live
 
 
 def main(args):
     price = []
+    global cur_symbol
+    cur_symbol = args.ticker
     window_size =10
     time_now = datetime.datetime.now(tz).time()
-    url = 'https://api.binance.com/api/v1/ticker/price?symbol={}'.format(args.ticker)
-    live = Real(url)
-    price.append(live)
-    time.sleep(1)
-    live = Real(url)
-    price.append(live)
+
+    for c in range(window_size):
+        price.append(Real())
+
     model_name='model_double-dqn_GOOG_50_50'
 
     initial_offset = price[1] - price[0]
@@ -67,9 +70,10 @@ def evaluate_model(agent, price, window_size, debug):
     agent.inventory = []
     
     state = get_state(price, 0, window_size + 1)
-    url = 'https://api.binance.com/api/v1/ticker/price?symbol=XMRUSDT'
-    for t in range(40):
-        mdata =  Real(url)   
+
+    for t in range(100):
+        mdata =  Real()   
+        print(mdata)
         price.append(mdata)
         reward = 0
         next_state = get_state(price, t + 1, window_size + 1)
@@ -78,7 +82,7 @@ def evaluate_model(agent, price, window_size, debug):
         action = agent.act(state, is_eval=True)
 
         # BUY
-        if action == 1:
+        if action == 1 and t < 94 and len(agent.inventory) < 5:
             agent.inventory.append(price[t])
 
             history.append((price[t], "BUY"))
@@ -97,10 +101,9 @@ def evaluate_model(agent, price, window_size, debug):
                 logging.debug("Sell at: {} | Position: {}".format(
                     format_currency(price[t]), format_position(price[t] - bought_price)))
         # HOLD
-        else:
-            history.append((price[t], "HOLD"))
+        
 
-        done = (t == 39)
+        done = (t == 100 - 1)
 
         agent.memory.append((state, action, reward, next_state, done))
 
@@ -117,6 +120,8 @@ if __name__ == "__main__":
 
     coloredlogs.install(level="DEBUG")
     switch_k_backend_device()
+    
+
 
     try:
         main(args)
