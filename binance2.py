@@ -49,7 +49,7 @@ def main(args):
     window_size =10
     time_now = datetime.datetime.now(tz).time()
 
-    for c in range(window_size):
+    for c in range(2):
         price.append(Real())
 
     model_name='model_double-dqn_GOOG_50_50'
@@ -82,7 +82,7 @@ def evaluate_model(agent, price, window_size, debug):
         action = agent.act(state, is_eval=True)
 
         # BUY
-        if action == 1 and t < 94 and len(agent.inventory) < 5:
+        if action == 1 and t < 91 :
             agent.inventory.append(price[t])
 
             history.append((price[t], "BUY"))
@@ -90,7 +90,7 @@ def evaluate_model(agent, price, window_size, debug):
                 logging.debug("Buy at: {}".format(format_currency(price[t])))
         
         # SELL
-        elif action == 2 and len(agent.inventory) > 0:
+        elif (action == 2 and len(agent.inventory) > 0 ) or (t>90 and len(agent.inventory) > 0):
             bought_price = agent.inventory.pop(0)
             delta = price[t] - bought_price
             reward = delta #max(delta, 0)
@@ -100,6 +100,8 @@ def evaluate_model(agent, price, window_size, debug):
             if debug:
                 logging.debug("Sell at: {} | Position: {}".format(
                     format_currency(price[t]), format_position(price[t] - bought_price)))
+
+
         # HOLD
         
 
@@ -109,6 +111,8 @@ def evaluate_model(agent, price, window_size, debug):
 
         state = next_state
         #time.sleep(1)
+   
+
  
     return total_profit, history
 
