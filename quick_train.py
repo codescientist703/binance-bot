@@ -12,6 +12,8 @@ from trading_bot.utils import (
 	show_train_result,
 	switch_k_backend_device
 )
+from data_generator import Main
+
 def main(train_stock, window_size, batch_size, ep_count,
 		 strategy="t-dqn", model_name="model_debug", pretrained=False,
 		 debug=False):
@@ -27,6 +29,8 @@ def main(train_stock, window_size, batch_size, ep_count,
 if __name__ == "__main__":
 
 	train_stock = sys.argv[1]
+	Main(train_stock)
+
 	training_stock = 'training_data/' + train_stock + '.csv'
 	strategy = 'double-dqn'
 	window_size = 10

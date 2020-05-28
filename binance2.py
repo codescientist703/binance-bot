@@ -90,6 +90,7 @@ def evaluate_model(agent, price, window_size, debug):
                 logging.debug("Buy at: {}".format(format_currency(price[t])))
         
         # SELL
+        #The fix
         elif (action == 2 and len(agent.inventory) > 0 ) or (t>90 and len(agent.inventory) > 0):
             bought_price = agent.inventory.pop(0)
             delta = price[t] - bought_price
@@ -112,7 +113,7 @@ def evaluate_model(agent, price, window_size, debug):
         state = next_state
         #time.sleep(1)
    
-
+    print(len(agent.inventory))
  
     return total_profit, history
 
