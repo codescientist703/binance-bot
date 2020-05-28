@@ -63,7 +63,20 @@ def main(args):
     agent = Agent(window_size, pretrained=True, model_name=model_name)
     profit, history = evaluate_model(agent, price, window_size, debug=True)
     show_eval_result(model_name, profit, initial_offset)
-    print(history)
+    print("Profit:", profit)
+    buys = sells = holds = 0
+    for i in history:
+        if i[1] == "BUY":
+            buys += 1
+        elif i[1] == "SELL":
+            sells += 1
+        elif i[1] == "HOLD":
+            holds += 1
+    print("BUYS Percentage:", (buys/len(history)) * 100)
+    print("SELLS Percentage:", (sells/len(history)) * 100)
+    print("HOLDS Percentage:", (holds/len(history)) * 100)
+
+#--------------------------------------------------------------
     
 
 def evaluate_model(agent, price, window_size, debug):
@@ -75,18 +88,18 @@ def evaluate_model(agent, price, window_size, debug):
     
     state = get_state(price, 0, window_size + 1)
 
-    for t in range(100):
+    for t in range(2,100):
         mdata =  Real()   
         print(mdata)
         price.append(mdata)
         reward = 0
-        next_state = get_state(price, t + 1, window_size + 1)
+        next_state = get_state(price, t + 1 - 2, window_size + 1)
         
         # select an action
         action = agent.act(state, is_eval=True)
 
         # BUY
-        if action == 1 and t < 91 :
+        if action == 1:
             agent.inventory.append(price[t])
 
             history.append((price[t], "BUY"))
@@ -95,7 +108,7 @@ def evaluate_model(agent, price, window_size, debug):
         
         # SELL
         #The fix
-        elif (action == 2 and len(agent.inventory) > 0 ) or (t>90 and len(agent.inventory) > 0):
+        elif (action == 2 and len(agent.inventory) > 0 ):
             bought_price = agent.inventory.pop(0)
             delta = price[t] - bought_price
             reward = delta #max(delta, 0)
@@ -108,9 +121,11 @@ def evaluate_model(agent, price, window_size, debug):
 
 
         # HOLD
-        
+        else:
+            history.append((price[t], "HOLD"))
 
-        done = (t == 100 - 1)
+        
+        done = True
 
         agent.memory.append((state, action, reward, next_state, done))
 
