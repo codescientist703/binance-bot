@@ -23,6 +23,8 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
 
     state = get_state(data, 0, window_size + 1)
 
+    agent.load(model)
+
     for t in tqdm(range(data_length), total=data_length, leave=True, desc='Episode {}/{}'.format(episode, ep_count)):        
         reward = 0
         next_state = get_state(data, t + 1, window_size + 1)
