@@ -4,7 +4,7 @@ import sys
 
 
 from trading_bot.agent import Agent
-from trading_bot.methods import train_model, evaluate_model
+from trading_bot.method2 import train_model
 from trading_bot.utils import (
 	get_stock_data,
 	format_currency,
@@ -12,7 +12,7 @@ from trading_bot.utils import (
 	show_train_result,
 	switch_k_backend_device
 )
-from data_generator import Main
+from data_generator import generate
 
 def main(train_stock, window_size, batch_size, ep_count,
 		 strategy="t-dqn", model_name="model_debug", pretrained=False,
@@ -26,10 +26,9 @@ def main(train_stock, window_size, batch_size, ep_count,
 		train_result = train_model(agent, episode, train_data, ep_count=ep_count,
 								   batch_size=batch_size, window_size=window_size)
 
-if __name__ == "__main__":
+def quick_train(train_stock):
 
-	train_stock = sys.argv[1]
-	Main(train_stock)
+	generate(train_stock)
 
 	training_stock = 'training_data/' + train_stock + '.csv'
 	strategy = 'double-dqn'
@@ -44,9 +43,7 @@ if __name__ == "__main__":
 	switch_k_backend_device()
 	print(training_stock)
 	
-	try:
-		main(training_stock, window_size, batch_size,
+	main(training_stock, window_size, batch_size,
 			 ep_count, strategy=strategy, model_name=model_name, 
 			 pretrained=pretrained, debug=debug)
-	except KeyboardInterrupt:
-		print("Aborted!")
+	

@@ -25,6 +25,8 @@ from trading_bot.utils import (
 )
 from binance.client import Client
 
+from quick_train import quick_train
+
 tz = pytz.timezone('Asia/Kolkata')
 
 
@@ -46,6 +48,8 @@ def main(args):
     price = []
     global cur_symbol
     cur_symbol = args.ticker
+
+    quick_train(cur_symbol)
     window_size =10
     time_now = datetime.datetime.now(tz).time()
 

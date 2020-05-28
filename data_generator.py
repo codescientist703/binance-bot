@@ -128,7 +128,7 @@ def get_historic_klines(symbol, start, end, interval):
 	return ochl
 
 
-def Main(symbol):
+def generate(symbol):
 	#list_of_symbols = ['XMRUSDT', 'LINKUSDT', 'LTCUSDT', 'BNBUSDT', 'EOSUSDT', 'BCHUSDT', 'BTCUSDT', 'ETHUSDT', 'XRPUSDT']  # Symbols to be traded
 	
 	client.get_deposit_address(asset='USDT')  # USDT or BTC
