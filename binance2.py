@@ -99,7 +99,7 @@ def evaluate_model(agent, price, window_size, debug):
         action = agent.act(state, is_eval=True)
 
         # BUY
-        if action == 1:
+        if action == 1 and t<91 and len(agent.inventory)<7:
             agent.inventory.append(price[t])
 
             history.append((price[t], "BUY"))
