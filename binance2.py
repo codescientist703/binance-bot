@@ -24,11 +24,12 @@ from trading_bot.utils import (
     switch_k_backend_device
 )
 from binance.client import Client
-
+import warnings
 from quick_train import quick_train
-
+from decimal import *
 tz = pytz.timezone('Asia/Kolkata')
 
+warnings.filterwarnings('ignore')
 
 api_key = "JB80jU6aTMYXcLapXKPc2Rmnn12CUcm3l7RlnYAT7w8esCFAKYOTmd4bAMWxB33U"
 api_secret = "FsbKTSb7lCGLpQWoBad9Jobe8xpi177c2KrQ6Q31e86dUA5WgUqaliqHsILk7n5s"
@@ -80,31 +81,52 @@ def main(args):
     
 
 def evaluate_model(agent, price, window_size, debug):
+    quantity_1 = 1  # any value between 1-4 : 1 =100%, 2=50%, 3 = 33%, 4 = 25%, 5 = 20% and so on...
+    max_amount = 19  # Maximum authorized amount
+    loss_limit = -25  # Maximum loss limit to terminate the trading in dollar
+    buy_percent = 0.0005  # percent at which it should buy, currently 0.1% = 0.1/100 = 0.001
+    sell_percent = 0.0029  # percent at which it should sell, currently 0.1%
+    loss_percent = -0.0032  # stop loss if price falls, currently -0.3%
+    transaction = 50  # number of maximum transactions
+    buy_range = 0.0008  # allowed buy upto, currently 0.4%
     total_profit = 0
+    loss = []
+    quantity = {}
     t = 0
     
     history = []
     agent.inventory = []
     
     state = get_state(price, 0, window_size + 1)
-
+    step_size = float(next(filter(lambda f: f['filterType'] == 'LOT_SIZE', client.get_symbol_info(cur_symbol)['filters']))['stepSize'])
     for t in range(2,100):
         mdata =  Real()   
         print(mdata)
         price.append(mdata)
         reward = 0
         next_state = get_state(price, t + 1 - 2, window_size + 1)
-        
+
+
         # select an action
         action = agent.act(state, is_eval=True)
 
         # BUY
         if action == 1 and t<91 and len(agent.inventory)<7:
+
+            quantity[mdata] = Decimal((max_amount / (quantity_1 * mdata)),step_size)
             agent.inventory.append(price[t])
 
             history.append((price[t], "BUY"))
             if debug:
                 logging.debug("Buy at: {}".format(format_currency(price[t])))
+
+            df2 = pd.DataFrame({'Datetime': [datetime.now(tz)], 'Symbol': [cur_symbol], 'Buy/Sell': ['Sell'],
+                                            'Quantity': [quantity1], 'Price': [mdata], 'Profit/loss': [total_profit]})
+            df2['Datetime'] = df2['Datetime'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
+            df2.to_csv('5result.csv', index=False, mode='a', header=False)
+            max_amount += total_profit
+            loss.append(total_profit)
+
         
         # SELL
         #The fix

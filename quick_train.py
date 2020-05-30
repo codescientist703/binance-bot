@@ -37,7 +37,7 @@ def quick_train(train_stock):
 	ep_count = 10
 	model_name = 'model_double-dqn_GOOG_50'
 	pretrained = False
-	debug = True
+	debug = False
 
 	coloredlogs.install(level="DEBUG")
 	switch_k_backend_device()
