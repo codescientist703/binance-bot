@@ -83,6 +83,8 @@ def main(args):
     print("BUYS Percentage:", (buys/len(history)) * 100)
     print("SELLS Percentage:", (sells/len(history)) * 100)
     print("HOLDS Percentage:", (holds/len(history)) * 100)
+    rpath = 'training_data/' + cur_symbol + '.csv'
+    os.remove(rpath)
 
 #--------------------------------------------------------------
     
@@ -107,7 +109,7 @@ def evaluate_model(agent, price, window_size, debug):
     
     state = get_state(price, 0, window_size + 1)
     step_size = float(next(filter(lambda f: f['filterType'] == 'LOT_SIZE', client.get_symbol_info(cur_symbol)['filters']))['stepSize'])
-    for t in range(2,100):
+    for t in range(2,10):
         mdata =  Real()   
         print(mdata)
         price.append(mdata)
