@@ -102,14 +102,18 @@ def evaluate_model(agent, price, window_size, debug):
     spent_amount = 0
     loss = []
     quantity = {}
-    t = 0
+
+    buy_limit = 40
+    num_buys = 0
+
     
     history = []
     agent.inventory = []
     
     state = get_state(price, 0, window_size + 1)
     step_size = float(next(filter(lambda f: f['filterType'] == 'LOT_SIZE', client.get_symbol_info(cur_symbol)['filters']))['stepSize'])
-    for t in range(2,10):
+    t = 2
+    while True:
         mdata =  Real()   
         print(mdata)
         price.append(mdata)
@@ -121,9 +125,11 @@ def evaluate_model(agent, price, window_size, debug):
         action = agent.act(state, is_eval=True)
 
         # BUY
-        if action == 1 and t<91 and len(agent.inventory)<7:
+        if action == 1  and len(agent.inventory)<5 and num_buys<buy_limit:
 
             quantity[mdata] = floatPrecision((max_amount / (quantity_1 * mdata)),step_size)
+
+            client.order_market_buy(symbol=cur_symbol,quantity=quantity[mdata])
             agent.inventory.append(price[t])
 
             history.append((price[t], "BUY"))
@@ -140,16 +146,19 @@ def evaluate_model(agent, price, window_size, debug):
 
             max_amount += total_profit
             loss.append(total_profit)
+            num_buys += 1
+
 
         
         # SELL
         #The fix
-        elif (action == 2 and len(agent.inventory) > 0 ):
+        elif ((action == 2 and len(agent.inventory) > 0 )) or (num_buys==buy_limit and len(agent.inventory) > 0):
             bought_price = agent.inventory.pop(0)
             delta = price[t] - bought_price
             reward = delta #max(delta, 0)
             total_profit += delta
             quantity1 = quantity[bought_price]
+            client.order_market_sell(symbol=cur_symbol,quantity=quantity[bought_price])
 
             spent_amount -= float(quantity1) * bought_price;
 
@@ -171,10 +180,13 @@ def evaluate_model(agent, price, window_size, debug):
 
 
         # HOLD
+        elif num_buys==buy_limit:
+            break
+
         else:
             history.append((price[t], "HOLD"))
 
-        
+        t += 1;
         done = True
 
         agent.memory.append((state, action, reward, next_state, done))
@@ -182,7 +194,6 @@ def evaluate_model(agent, price, window_size, debug):
         state = next_state
         #time.sleep(1)
    
-    print(len(agent.inventory))
  
     return total_profit, history
 
