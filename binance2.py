@@ -57,7 +57,7 @@ def main(args):
     global cur_symbol
     cur_symbol = args.ticker
 
-    #quick_train(cur_symbol)
+    quick_train(cur_symbol)
     window_size =10
     time_now = datetime.datetime.now(tz).time()
 
@@ -129,7 +129,7 @@ def evaluate_model(agent, price, window_size, debug):
 
             quantity[mdata] = floatPrecision((max_amount / (quantity_1 * mdata)),step_size)
 
-            client.order_market_buy(symbol=cur_symbol,quantity=quantity[mdata])
+            #client.order_market_buy(symbol=cur_symbol,quantity=quantity[mdata])
             agent.inventory.append(price[t])
 
             history.append((price[t], "BUY"))
@@ -158,7 +158,7 @@ def evaluate_model(agent, price, window_size, debug):
             reward = delta #max(delta, 0)
             total_profit += delta
             quantity1 = quantity[bought_price]
-            client.order_market_sell(symbol=cur_symbol,quantity=quantity[bought_price])
+            #client.order_market_sell(symbol=cur_symbol,quantity=quantity[bought_price])
 
             spent_amount -= float(quantity1) * bought_price;
 
