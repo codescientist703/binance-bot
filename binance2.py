@@ -26,7 +26,9 @@ from trading_bot.utils import (
 from binance.client import Client
 import warnings
 from quick_train import quick_train
-from decimal import *
+import decimal
+import math
+import pandas as pd
 tz = pytz.timezone('Asia/Kolkata')
 
 warnings.filterwarnings('ignore')
@@ -44,13 +46,18 @@ def Real():
     time.sleep(1)
     return live
 
+def floatPrecision(f, n):
+    n = int(math.log10(1 / float(n)))
+    f = math.floor(float(f) * 10 ** n) / 10 ** n
+    f = "{:0.0{}f}".format(float(f), n)
+    return str(int(f)) if int(n) == 0 else f
 
 def main(args):
     price = []
     global cur_symbol
     cur_symbol = args.ticker
 
-    quick_train(cur_symbol)
+    #quick_train(cur_symbol)
     window_size =10
     time_now = datetime.datetime.now(tz).time()
 
@@ -62,7 +69,7 @@ def main(args):
     initial_offset = price[1] - price[0]
 
     agent = Agent(window_size, pretrained=True, model_name=model_name)
-    profit, history = evaluate_model(agent, price, window_size, debug=True)
+    profit, history = evaluate_model(agent, price, window_size, debug=False)
     show_eval_result(model_name, profit, initial_offset)
     print("Profit:", profit)
     buys = sells = holds = 0
@@ -90,6 +97,7 @@ def evaluate_model(agent, price, window_size, debug):
     transaction = 50  # number of maximum transactions
     buy_range = 0.0008  # allowed buy upto, currently 0.4%
     total_profit = 0
+    spent_amount = 0
     loss = []
     quantity = {}
     t = 0
@@ -113,17 +121,21 @@ def evaluate_model(agent, price, window_size, debug):
         # BUY
         if action == 1 and t<91 and len(agent.inventory)<7:
 
-            quantity[mdata] = Decimal((max_amount / (quantity_1 * mdata)),step_size)
+            quantity[mdata] = floatPrecision((max_amount / (quantity_1 * mdata)),step_size)
             agent.inventory.append(price[t])
 
             history.append((price[t], "BUY"))
             if debug:
                 logging.debug("Buy at: {}".format(format_currency(price[t])))
 
-            df2 = pd.DataFrame({'Datetime': [datetime.now(tz)], 'Symbol': [cur_symbol], 'Buy/Sell': ['Sell'],
-                                            'Quantity': [quantity1], 'Price': [mdata], 'Profit/loss': [total_profit]})
+            df2 = pd.DataFrame({'Datetime': [datetime.datetime.now(tz)], 'Symbol': [cur_symbol], 'Buy/Sell': ['Buy'],
+                                            'Quantity': [quantity_1], 'Price': [mdata], 'Profit/loss': [total_profit]})
             df2['Datetime'] = df2['Datetime'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
-            df2.to_csv('5result.csv', index=False, mode='a', header=False)
+            if not os.path.isfile('5result.csv'):
+                df2.to_csv('5result.csv', index=False)
+            else:
+                df2.to_csv('5result.csv', index=False, mode='a', header=False)
+
             max_amount += total_profit
             loss.append(total_profit)
 
@@ -135,6 +147,20 @@ def evaluate_model(agent, price, window_size, debug):
             delta = price[t] - bought_price
             reward = delta #max(delta, 0)
             total_profit += delta
+            quantity1 = quantity[bought_price]
+
+            spent_amount -= float(quantity1) * bought_price;
+
+            max_amount += total_profit
+            loss.append(total_profit)
+
+            df2 = pd.DataFrame({'Datetime': [datetime.datetime.now(tz)], 'Symbol': [cur_symbol], 'Buy/Sell': ['Sell'],
+                                            'Quantity': [quantity_1], 'Price': [mdata], 'Profit/loss': [total_profit]})
+            df2['Datetime'] = df2['Datetime'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
+            if not os.path.isfile('5result.csv'):
+                df2.to_csv('5result.csv', index=False)
+            else:
+                df2.to_csv('5result.csv', index=False, mode='a', header=False)
 
             history.append((price[t], "SELL"))
             if debug:
