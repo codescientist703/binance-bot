@@ -31,17 +31,16 @@ import math
 import pandas as pd
 tz = pytz.timezone('Asia/Kolkata')
 
-warnings.filterwarnings('ignore')
+
 
 api_key = "JB80jU6aTMYXcLapXKPc2Rmnn12CUcm3l7RlnYAT7w8esCFAKYOTmd4bAMWxB33U"
 api_secret = "FsbKTSb7lCGLpQWoBad9Jobe8xpi177c2KrQ6Q31e86dUA5WgUqaliqHsILk7n5s"
 client = Client(api_key, api_secret)
 client.get_deposit_address(asset='USDT')
 
-cur_symbol = 'XMRUSDT'
 
 
-def Real():
+def Real(cur_symbol):
     live = float(client.get_symbol_ticker(symbol = cur_symbol)['price']);
     time.sleep(1)
     return live
@@ -54,22 +53,22 @@ def floatPrecision(f, n):
 
 def main(args):
     price = []
-    global cur_symbol
+
     cur_symbol = args.ticker
 
-    quick_train(cur_symbol)
+    #quick_train(cur_symbol)
     window_size =10
     time_now = datetime.datetime.now(tz).time()
 
     for c in range(2):
-        price.append(Real())
+        price.append(Real(cur_symbol))
 
     model_name='model_double-dqn_GOOG_50_50'
 
     initial_offset = price[1] - price[0]
 
     agent = Agent(window_size, pretrained=True, model_name=model_name)
-    profit, history = evaluate_model(agent, price, window_size, debug=False)
+    profit, history = evaluate_model(agent, price, window_size,cur_symbol, debug=False)
     show_eval_result(model_name, profit, initial_offset)
     print("Profit:", profit)
     buys = sells = holds = 0
@@ -89,7 +88,7 @@ def main(args):
 #--------------------------------------------------------------
     
 
-def evaluate_model(agent, price, window_size, debug):
+def evaluate_model(agent, price, window_size, cur_symbol, debug):
     quantity_1 = 1  # any value between 1-4 : 1 =100%, 2=50%, 3 = 33%, 4 = 25%, 5 = 20% and so on...
     max_amount = 19  # Maximum authorized amount
     loss_limit = -25  # Maximum loss limit to terminate the trading in dollar
@@ -114,8 +113,8 @@ def evaluate_model(agent, price, window_size, debug):
     step_size = float(next(filter(lambda f: f['filterType'] == 'LOT_SIZE', client.get_symbol_info(cur_symbol)['filters']))['stepSize'])
     t = 2
     while True:
-        mdata =  Real()   
-        print(mdata)
+        mdata =  Real(cur_symbol)   
+        #print(mdata)
         price.append(mdata)
         reward = 0
         next_state = get_state(price, t + 1 - 2, window_size + 1)
@@ -125,6 +124,9 @@ def evaluate_model(agent, price, window_size, debug):
         action = agent.act(state, is_eval=True)
 
         # BUY
+        if num_buys==buy_limit and len(agent.inventory) == 0:
+            break
+
         if action == 1  and len(agent.inventory)<5 and num_buys<buy_limit:
 
             quantity[mdata] = floatPrecision((max_amount / (quantity_1 * mdata)),step_size)
@@ -152,7 +154,7 @@ def evaluate_model(agent, price, window_size, debug):
         
         # SELL
         #The fix
-        elif ((action == 2 and len(agent.inventory) > 0 )) or (num_buys==buy_limit and len(agent.inventory) > 0):
+        elif (action == 2 and len(agent.inventory) > 0 ):
             bought_price = agent.inventory.pop(0)
             delta = price[t] - bought_price
             reward = delta #max(delta, 0)
@@ -180,9 +182,6 @@ def evaluate_model(agent, price, window_size, debug):
 
 
         # HOLD
-        elif num_buys==buy_limit:
-            break
-
         else:
             history.append((price[t], "HOLD"))
 
@@ -200,9 +199,10 @@ def evaluate_model(agent, price, window_size, debug):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    warnings.filterwarnings("ignore", category=FutureWarning)
     parser.add_argument('ticker', help = 'ticker')
     args = parser.parse_args()
-
+    
     coloredlogs.install(level="DEBUG")
     switch_k_backend_device()
     
