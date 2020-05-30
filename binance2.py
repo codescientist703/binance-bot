@@ -56,7 +56,7 @@ def main(args):
 
     cur_symbol = args.ticker
 
-    #quick_train(cur_symbol)
+    quick_train(cur_symbol)
     window_size =10
     time_now = datetime.datetime.now(tz).time()
 
