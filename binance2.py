@@ -152,7 +152,7 @@ def evaluate_model(agent, price, window_size, debug):
         
         # SELL
         #The fix
-        elif ((action == 2 and len(agent.inventory) > 0 )) or (num_buys==buy_limit and len(agent.inventory) > 0):
+        elif action == 2 and len(agent.inventory) > 0 :
             bought_price = agent.inventory.pop(0)
             delta = price[t] - bought_price
             reward = delta #max(delta, 0)
