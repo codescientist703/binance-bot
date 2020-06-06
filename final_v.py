@@ -224,15 +224,18 @@ def get_historic_klines_stochastic(symbol, start, end, interval):
     return df
 
 
-def decision(hist,stochastic,data):
+def decision(hist,stochastic,data,inventory):
     print(hist[-1])
+    print(stochastic[-1])
+    print(data[-1])
 
     if hist[-1] > 0:
-        print("buy at " +  str(data[-1]))
+        print("Buy at " +  str(data[-1]))
+        inventory.append(data[-1])
 
 
-    elif stochastic[-1]>0 and len(data)>0:
-        print("sell at " + str(data[-1]))
+    elif stochastic[-1]>0 and len(inventory)>0:
+        print("Sell at " + str(data[-1]))
         data.pop()
 
     else:
@@ -243,7 +246,7 @@ def decision(hist,stochastic,data):
 if __name__ == '__main__':
     cn = 0
     data = []
-
+    inventory = []
     while cn<100:
         close = get_historic_klines(symbol, "2 days ago UTC", "now UTC", Client.KLINE_INTERVAL_5MINUTE)
         ochl = get_historic_klines_ochl(symbol, "2 days ago UTC", "now UTC", Client.KLINE_INTERVAL_5MINUTE)
@@ -262,7 +265,7 @@ if __name__ == '__main__':
 
         stochastic_data = get_historic_klines_stochastic(symbol,"20 days ago UTC","now UTC",Client.KLINE_INTERVAL_1DAY)
         stochastic_li = stochastic_data['%K'].tolist()
-        decision(hist,stochastic_li,source)
+        decision(hist,stochastic_li,data,inventory)
         cn += 1;
 
 
