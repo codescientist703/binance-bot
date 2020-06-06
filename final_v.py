@@ -231,7 +231,7 @@ def decision(hist,stochastic,data):
         print("buy at " +  str(data[-1]))
 
 
-    elif stochastic>0 and len(data)>0:
+    elif stochastic[-1]>0 and len(data)>0:
         print("sell at " + str(data[-1]))
         data.pop()
 
